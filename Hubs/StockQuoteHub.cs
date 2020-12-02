@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StockQuoteRealTime.Models;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,8 +12,6 @@ namespace StockQuoteRealTime.Hubs
 {
     public class StockQuoteHub : Hub
     {
-        static readonly HttpClient httpClient = new HttpClient();
-
         static readonly JsonSerializerOptions options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -68,7 +67,10 @@ namespace StockQuoteRealTime.Hubs
         {
             var url = $"https://api.nasdaq.com/api/quote/{symbol}/info?assetclass=stocks";
 
-            var jsonString = await httpClient.GetStringAsync(url);
+            using var client = new WebClient();
+            client.Headers[HttpRequestHeader.Accept] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+            var jsonString = await client.DownloadStringTaskAsync(url);
+
             return JsonSerializer.Deserialize<StockInfo>(jsonString, options);
         }
     }
