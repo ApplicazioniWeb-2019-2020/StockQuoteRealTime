@@ -22,10 +22,12 @@ namespace StockQuoteRealTime.Hubs
         readonly Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
 
         readonly IServiceScopeFactory _scopeFactory;
+        readonly IHttpClientFactory _httpClientFactory;
 
-        public StockQuoteHub(IServiceScopeFactory scopeFactor)
+        public StockQuoteHub(IServiceScopeFactory scopeFactor, IHttpClientFactory httpClientFactory)
         {
             _scopeFactory = scopeFactor;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task SubscribeSymbol(string symbol)
@@ -67,9 +69,8 @@ namespace StockQuoteRealTime.Hubs
         {
             var url = $"https://api.nasdaq.com/api/quote/{symbol}/info?assetclass=stocks";
 
-            using var client = new WebClient();
-            client.Headers[HttpRequestHeader.Accept] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
-            var jsonString = await client.DownloadStringTaskAsync(url);
+            var client = _httpClientFactory.CreateClient("quotes");
+            var jsonString = await client.GetStringAsync(url);
 
             return JsonSerializer.Deserialize<StockInfo>(jsonString, options);
         }

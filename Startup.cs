@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using StockQuoteRealTime.Hubs;
 
 namespace StockQuoteRealTime
@@ -26,6 +29,16 @@ namespace StockQuoteRealTime
         {
             services.AddRazorPages();
             services.AddSignalR();
+
+            services.AddHttpClient("quotes", client =>
+            {
+                client.DefaultRequestHeaders.Add(HeaderNames.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+                client.DefaultRequestHeaders.Add(HeaderNames.AcceptEncoding, "gzip, deflate, br");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
