@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using StockQuoteRealTime.Models;
+using StockQuoteRealTime.Services;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -12,22 +13,16 @@ namespace StockQuoteRealTime.Hubs
 {
     public class StockQuoteHub : Hub
     {
-        static readonly JsonSerializerOptions options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        };
-
         readonly object sync = new object();
         readonly Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
 
         readonly IServiceScopeFactory _scopeFactory;
-        readonly IHttpClientFactory _httpClientFactory;
+        readonly IStockInfoService _stockInfoService;
 
-        public StockQuoteHub(IServiceScopeFactory scopeFactor, IHttpClientFactory httpClientFactory)
+        public StockQuoteHub(IServiceScopeFactory scopeFactor, IStockInfoService stockInfoService)
         {
             _scopeFactory = scopeFactor;
-            _httpClientFactory = httpClientFactory;
+            _stockInfoService = stockInfoService;
         }
 
         public async Task SubscribeSymbol(string symbol)
@@ -52,7 +47,7 @@ namespace StockQuoteRealTime.Hubs
                     // https://github.com/dotnet/AspNetCore.Docs/issues/8537
                     using (var scope = scopeFactory.CreateScope())
                     {
-                        var stockInfo = await GetStockInfo(symbol);
+                        var stockInfo = await _stockInfoService.GetStockInfo(symbol);
 
                         var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<StockQuoteHub>>();
                         await hubContext.Clients.Group(symbol).SendAsync("ReceiveQuote", stockInfo);
@@ -63,16 +58,6 @@ namespace StockQuoteRealTime.Hubs
 
                 timers.Add(symbol, timer);
             }
-        }
-
-        async Task<StockInfo> GetStockInfo(string symbol)
-        {
-            var url = $"https://api.nasdaq.com/api/quote/{symbol}/info?assetclass=stocks";
-
-            var client = _httpClientFactory.CreateClient("quotes");
-            var jsonString = await client.GetStringAsync(url);
-
-            return JsonSerializer.Deserialize<StockInfo>(jsonString, options);
         }
     }
 }

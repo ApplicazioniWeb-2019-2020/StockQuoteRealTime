@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Net.Http.Headers;
 using StockQuoteRealTime.Hubs;
+using StockQuoteRealTime.Services;
 
 namespace StockQuoteRealTime
 {
@@ -39,6 +35,8 @@ namespace StockQuoteRealTime
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
+
+            services.AddScoped<IStockInfoService, StockInfoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
